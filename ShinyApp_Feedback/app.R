@@ -27,6 +27,8 @@ sidebar <- dashboardSidebar(
     id = "sidebarmenu",
     menuItem("Study information", tabName = "home", icon = icon("info"), badgeColor = "green"),
     menuSubItem("Sample information", tabName = "info", icon = icon("users")),
+    menuSubItem("Sample information", tabName = "info", icon = icon("users")),
+    
     menuItem(numericInput("Participant", label = "Please enter your Participant ID", value = "ID")),
     menuItem(actionButton("do", "See results")),
     menuItem("Contact Information", tabName = "admin", icon = icon("paper-plane", lib = "font-awesome"))
@@ -37,6 +39,7 @@ sidebar <- dashboardSidebar(
 
 # Body --------------------------------------------------------------------
 
+getwd()
 body <- dashboardBody(
   setBackgroundImage(
     src = "background_stars.jpg",
@@ -51,7 +54,7 @@ body <- dashboardBody(
         column(12,
           align = "center",
           h1("Feedback Reports"),
-          h2("Dealing with entrepreneurial work events", style = "color: white;")
+          h2("Dealing with entrepreneurial work events")
         )
       )
     ),
@@ -105,9 +108,6 @@ body <- dashboardBody(
             column(
               7,
               title = "Buisnesses owned by women worldwide", status = "primary",
-              br(),
-              br(),
-              br(),
               icon("question-circle"),
               tags$div(
                 "According to data of the",
@@ -117,9 +117,8 @@ body <- dashboardBody(
                 ),
                 "1 in 3 businesses are owned by a woman."
               ),
-              HTML('<p><img src="gender_worldwide.png"
-                            width="510"
-                            height="190"/></p>')
+              br(),
+              plotOutput("gender_worldwide", height = "300px")
             )
           )
         )
@@ -162,8 +161,6 @@ body <- dashboardBody(
                      plotlyOutput("octyp_dist", height = "280px")
                      ),
               column(6,
-                     br(),
-                     br(),
                      br(),
                      icon("question-circle"),
                      tags$div("Being a part-time entrepreneur may position individuals to exhibit innovative behavior in their employee roles. Results of a study by",
@@ -214,17 +211,27 @@ server <- function(input, output, session) {
   # "age_dist" --------------------------------------------------------------
   
   
-  output$age_dist <- renderPlot({
-    part_age <- long_pan[long_pan$ID_code == input$Participant, ] %>%
-      dplyr::select(dplyr::matches("t1age_1")) %>% .[1, 1]
-    younger_than <- round(nrow(long_pan[long_pan$t1age_1 > part_age, ]) / (nrow(long_pan[long_pan$t1age_1 > 18, ])) * 100, 0)
-    text <- paste("You are younger than ", younger_than, " percent \n of the entrepreneurs in the sample.")
-    hist(main = text, long_pan$t1age_1, xlab = "Age", ylab = "Number of participants", xlim = c(18, 70), breaks = "sturges")
-      axis(side = 1, at = seq(10, 70, 5), labels = seq(10, 70, 5))
-      abline(v = part_age, col = "red")
-  }, height = 270, width = 400
-  )
-
+  output$age_dist <- renderPlot(
+    {
+      part_age <- long_pan[long_pan$ID_code == input$Participant, ] %>%
+        dplyr::select(dplyr::matches("t1age_1")) %>% .[1, 1]
+      younger_than <- round(nrow(long_pan[long_pan$t1age_1 > part_age, ]) / (nrow(long_pan[long_pan$t1age_1 > 18, ])) * 100, 0)
+      text <- paste("You are younger than", younger_than, "percent of the entrepreneurs \nin the sample.")
+      
+      ggplot(long_pan, aes(x=t1age_1))+
+        ggtitle(text) + 
+        theme(text = element_text(size = 14)) + 
+        theme(plot.title = element_text(size=16)) +
+        theme(axis.text.x = element_text(color = "black", size = 14, face = "plain")) +
+        theme(axis.text.y = element_text(color = "black", size = 14, face = "plain")) +
+        theme(legend.text = element_text(size = 14)) +  
+        geom_histogram(binwidth = 5, boundary = 0, closed = "right", fill="#443983", color="#e9ecef") + 
+        scale_x_continuous(name = "Age", lim = c(15, 70)) + 
+        scale_y_continuous(name = "Number of participants") +
+        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+              panel.background = element_blank(), axis.line = element_line(colour = "black"))
+    })
+  
   
   
   # "t1gender_dist" -----------------------------------------------------------
@@ -241,7 +248,7 @@ server <- function(input, output, session) {
       unlist(.)
     df_t1gender <- as_tibble(cbind(count_gender, lbls_gender))
     plot_ly(df_t1gender, labels = ~lbls_gender, values = ~count_gender,            
-            marker = list(colors = c('#440154FF','#443A83FF', '#21908CFF', '#31688EFF', '#35B779FF', '#8FD744FF', '#FDE725FF'),
+            marker = list(colors = c('#440154FF', '#21908CFF'),
                           line = list(color = '#FFFFFF', width = 1)), 
             type = "pie", width = 280, height = 280) %>%
       layout(
@@ -258,21 +265,27 @@ server <- function(input, output, session) {
   
 
 # gender_worldwide --------------------------------------------------------
-
-  df_gender_worldwide <- data.frame(region=c("World", "East Asia & Pacific", "Europe & Central Asia", "Latin America & Carribean", "Middle East & North Africa",
-                          "South Asia", "Sub-Saharan Africa"),
+  output$gender_worldwide <- renderPlot(
+    {
+  df_gender_worldwide <- data.frame(region=c("World", "East Asia & \n Pacific", "Europe & \n Central Asia", "Latin America & \n Carribean", "Middle East & \n North Africa",
+                          "South Asia", "Sub-Saharan \n Africa"),
                    percentage=c(34, 47, 33, 50, 23, 18, 29))
   
   ggplot(data=df_gender_worldwide, aes(x=region, y=percentage)) +
-    geom_bar(stat="identity") +
-    theme(text = element_text(size = 14)) + 
-    theme(plot.title = element_text(size=16)) +
-    theme(axis.text.x = element_text(color = "black", size = 14, face = "plain")) +
-    theme(axis.text.y = element_text(color = "black", size = 14, face = "plain")) +
+    geom_bar(stat="identity", fill = "#21908CFF") +
+    scale_y_continuous(expand = c(0, 0)) +
+    theme(plot.title = element_text(size=14)) +
+    theme(axis.text.x = element_text(color = "black", size = 13, face = "plain")) +
+    theme(axis.text.y = element_text(color = "black", size = 13, face = "plain")) +
     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-          panel.background = element_blank()) +
+          panel.background = element_blank(), axis.text.x=element_blank(),
+          axis.ticks.x=element_blank(),  axis.title.y =element_blank(), 
+          axis.title.x = element_text(size = 10, hjust = -3.0)) +
     geom_text(aes(label = paste0(percentage, "%")), hjust=1.5, colour = "white") +
-    coord_flip()
+    labs(title = "Share of small, medium, and large firms with a woman \namong the principal owners", x = "Region") +
+    coord_flip() + 
+    ylab("Source = https://blogs.worldbank.org/opendata/women-entrepreneurs-needed-stat")
+    })
   
 
 
@@ -411,7 +424,7 @@ server <- function(input, output, session) {
         scale_x_continuous(name = "Time since business foundation in months", breaks = seq(-12, 72, 6), lim = c(-12, 72), labels = seq(-12, 72, 6)) + 
         scale_y_continuous(name = "Number of participants") +
         scale_fill_manual(values = c("founded" = "#440154FF",
-                                     "not founded yet" = "#35B779FF")) + 
+                                     "pre-foundation phase" = "#35B779FF")) + 
         theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
               panel.background = element_blank(), axis.line = element_line(colour = "black"))
     })
