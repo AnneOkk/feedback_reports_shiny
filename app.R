@@ -182,50 +182,38 @@ body <- dashboardBody(
       tabName = "events",
       fluidRow(
         column(
-          10,
-          box(title = "Negative events areas", status = "primary", solidHeader = TRUE, width = NULL,
-              column(4, 
-                     br(),
-                     br(),
-                    p("In the study, we asked participants to think of a negative work event that happened to them as entrepreneurs over the course of the past two weeks. 
-                    Participants were then asked to to select the area in which the negative work event occurred and to describe the event briefly. 
-                    If multiple events were reported, participants were asked to select the event that affected them most severely. 
-                    On the right, you see an overview of the areas in which the events rated as most severe occurred.
-                    \nNext, we applied natural language processing procedures to identify the most common nouns and adjectives used by the entrepreneurs in the sample to describe negative 
-                    work events. 
-                    For more information about the natural language procedure and the packages that were used, please visit the author's Github repository (LINK).", style = "font-size: 15px;")
-              ),
-              column(1),
-              column(7, 
-                     p(htmlOutput("majority_evdes")),
-                     plotlyOutput("evdes_dist", height = "280px")
-              )
+          7,
+          box(title = "Negative events: Most common areas", status = "primary", solidHeader = TRUE, width = NULL,
+              p(htmlOutput("majority_evdes")),
+              br(),
+              plotlyOutput("evdes_dist", height = "280px")
           )
         )
       ),
       fluidRow(
         column(
-          11,
-          box(title = "Negative events descriptions", status = "primary", solidHeader = TRUE, width = NULL,
-              column(4, 
+          7,
+          box(title = "Most commonly used words", status = "primary", solidHeader = TRUE, width = NULL,
+              column(6,
+                     br(), 
+                     tags$div("Because entrepreneurs provided written texts describing negative work events that happened over the past week, we applied 
+                     natural language processing procedures to analyse and synthesize the text entries. Specifically, we cleaned the texts by 
+                     normalizing the text entries, removing stop words, and performing tokenization and lemmatization. Next, we created a wordcloud displaying the most commonly used 
+                     nouns and adjectives.", br(), br(), "For more information on the natural language processing procedure and the packages used, please visit the",
+                     tags$a(href = "https://bnosac.github.io/udpipe/en/index.html", "UDPipe Documentation"))
+                     ),
+              column(6,
                      br(),
+                     tags$img(src = "wordcloud.png", width = "380px", height = "280px"),
                      br(),
-                     p("In the study, we asked participants to think of a negative work event that happened to them as entrepreneurs over the course of the past two weeks. 
-                    Participants were then asked to to select the area in which the negative work event occurred and to describe the event briefly. 
-                    Finally, if multiple events were reported, participants were asked to select the event that affected them most severely. 
-                    On the right, we show an overview of the areas in which the events rated as most severe occurred.", style = "font-size: 15px;")
-              ),
-              column(1),
-              column(7, 
-                     p(htmlOutput("majority_evdes")),
-                     plotlyOutput("evdes_dist", height = "280px")
+                     br())
               )
           )
         )
       )
     )
   )
-)
+
 
 # UI ----------------------------------------------------------------------
 
@@ -519,13 +507,13 @@ server <- function(input, output, session) {
   
   output$evdes_dist <- renderPlotly({
     lbls_evdes <- c("Financial difficulties", 
-                    "Conflicts with clients, stakeholders \nor colleagues", 
-                    "Conflicts between clients, stakeholders, \nor colleagues",
+                    "Conflicts with clients, stakeholders or colleagues", 
+                    "Conflicts between clients, stakeholders, or colleagues",
                     "Legal issues", 
-                    "Absence or a lack of personnel or \nsupport", 
-                    "Problems related to material, service \nsupply or quality", 
+                    "Absence or a lack of personnel or support", 
+                    "Problems related to material, service supply or quality", 
                     "Mistakes or mishaps", 
-                    "Another negative work event not \nassociated with these categories")
+                    "Another negative work event not associated with these categories")
     count_evdes <- long_pan %>%
       group_by(max_sev, ID_code) %>%
       tally() %>%
@@ -537,12 +525,12 @@ server <- function(input, output, session) {
     df_evdes <- as_tibble(cbind(count_evdes, lbls_evdes))
     plot_ly(df_evdes, labels = ~lbls_evdes, values = ~count_evdes, 
                     marker = list(colors = c('#fde725','#277f8e', '#a0da39', '#46327e','#a0da39', '#440154', '#1fa187', '#365c8d'),
-                                  line = list(color = '#FFFFFF', width = 1)), type = "pie", width = 580, height = 280) %>%
+                                  line = list(color = '#FFFFFF', width = 1)), type = "pie", width = 850, height = 280) %>%
       layout(
         title = "",
         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-        legend = list(x = -0.9, y = 1.0), margin = list(l=0, r=0, b=10, t=10, pad=4)
+        legend = list(x = 1.9, y = 0.9), margin = list(l=0, r=0, b=15, t=10, pad=4)
       ) 
   })
   
@@ -567,7 +555,9 @@ server <- function(input, output, session) {
       print("'another negative work event not associated with these categories'")
     }
     
-    paste0("Most entrepreneurs experienced a negative event related to \n", maj_evdes, ".")
+    paste0("In the study, we asked participants to think of a negative work event that happened to them as entrepreneurs over the past week. 
+           Participants were then asked to to select the area in which the negative work event occurred and to describe the event briefly. 
+           Most entrepreneurs experienced a negative event related to \n", maj_evdes, ".")
   })
   
 
